@@ -1,0 +1,7 @@
+// ============================================================
+// FILE: user/usys.pl (MODIFIED)
+// Line: 44 — added dumppanic entry
+// ============================================================
+//
+// ADDED after uptime entry:
+entry("dumppanic");

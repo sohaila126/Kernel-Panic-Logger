@@ -1,0 +1,10 @@
+// ============================================================
+// FILE: kernel/syscall.c (MODIFIED)
+// Lines: 103, 130 — added extern + syscall table entry
+// ============================================================
+//
+// ADDED extern declaration with other sys_ functions:
+extern uint64 sys_dumppanic(void);
+
+// ADDED entry in syscalls[] array:
+[SYS_dumppanic] sys_dumppanic,

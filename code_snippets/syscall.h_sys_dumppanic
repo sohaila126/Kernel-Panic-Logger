@@ -1,0 +1,7 @@
+// ============================================================
+// FILE: kernel/syscall.h (MODIFIED)
+// Line: 22 — added SYS_dumppanic
+// ============================================================
+//
+// ADDED new syscall number at end:
+#define SYS_dumppanic 22
