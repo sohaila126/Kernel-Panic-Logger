@@ -5,8 +5,8 @@
 // Usage: dumppanic
 //
 
-#include "kernel/paniclog.h"
 #include "kernel/types.h"
+#include "kernel/paniclog.h"
 #include "user/user.h"
 
 static void
@@ -21,7 +21,7 @@ print_ctx(struct crash_context *ctx)
   }
 
   printf("Message: %s\n", ctx->panic_msg);
-  printf("Ticks:   %ld\n", ctx->panic_ticks);
+  printf("Ticks:   %lu\n", ctx->panic_ticks);
   printf("CPU:     %d\n", ctx->cpu);
   printf("\n-- RISC-V Register State --\n");
   printf("ra=0x%lx  sp=0x%lx  gp=0x%lx  tp=0x%lx\n",
@@ -69,7 +69,7 @@ main(int argc, char *argv[])
   }
 
   if (sz != sizeof(ctx)) {
-    printf("dumppanic: size mismatch (expected %ld, got %ld)\n",
+    printf("dumppanic: size mismatch (expected %lu, got %lu)\n",
            sizeof(ctx), sz);
     return -1;
   }

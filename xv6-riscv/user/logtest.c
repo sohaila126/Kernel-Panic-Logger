@@ -8,8 +8,8 @@
 // Reports PASS/FAIL for each test case.
 //
 
-#include "kernel/paniclog.h"
 #include "kernel/types.h"
+#include "kernel/paniclog.h"
 #include "user/user.h"
 
 static int tests_run = 0;
