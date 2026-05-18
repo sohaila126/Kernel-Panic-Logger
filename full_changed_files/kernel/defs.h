@@ -75,6 +75,7 @@ void            log_panic_prep(const char*, int, const char*, ...) __attribute__
 void            log_flush(void);
 void            log_save_crash_context(const char*);
 void            log_dump_crash_context(void);
+int             log_test(void);
 
 // pipe.c
 int             pipealloc(struct file**, struct file**);

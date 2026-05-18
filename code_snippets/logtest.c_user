@@ -1,0 +1,56 @@
+// ============================================================
+// FILE: user/logtest.c (NEW FILE)
+// Lines: 1-99 (complete file)
+// ============================================================
+//
+// User-space automated test:
+//   - Exercises kernel log system via logtest() syscall
+//   - Reads crash context via dumppanic() syscall
+//   - Validates magic, field values, and stress tolerance
+//   - Prints PASS/FAIL for each test case
+
+#include "kernel/paniclog.h"
+#include "kernel/types.h"
+#include "user/user.h"
+
+static int tests_run = 0, tests_passed = 0;
+
+#define TEST(name) printf("  TEST %d: %s ... ", ++tests_run, name)
+#define PASS()     do { printf("PASS\n"); tests_passed++; } while(0)
+#define FAIL(msg)  printf("FAIL: %s\n", msg)
+
+int main(void) {
+  printf("logtest: starting kernel panic log tests\n");
+
+  // Test 1: kernel log_test (info/warn/debug/flush)
+  TEST("kernel log_test");
+  if (logtest() == 0) PASS(); else FAIL("logtest returned non-zero");
+
+  // Test 2: dumppanic syscall
+  TEST("dumppanic syscall");
+  struct crash_context ctx; uint64 sz;
+  int ret = dumppanic(&ctx, &sz);
+  if (ret == 0 && sz == sizeof(ctx)) PASS();
+  else FAIL("syscall failed or size mismatch");
+
+  // Test 3: magic = 0 before panic
+  TEST("magic is 0 before panic");
+  dumppanic(&ctx, &sz);
+  if (ctx.magic == 0) PASS(); else FAIL("expected magic=0");
+
+  // Test 4: fields zeroed before panic
+  TEST("fields zeroed before panic");
+  dumppanic(&ctx, &sz);
+  if (ctx.ra == 0 && ctx.sp == 0 && ctx.sepc == 0 && ctx.pid == 0) PASS();
+  else FAIL("non-zero fields before panic");
+
+  // Test 5: stress test
+  TEST("repeated log_test (5x stress)");
+  int ok = 1;
+  for (int i = 0; i < 5; i++)
+    if (logtest() != 0) { ok = 0; break; }
+  if (ok) PASS(); else FAIL("logtest failed during stress");
+
+  printf("\nlogtest: %d/%d passed\n", tests_passed, tests_run);
+  return (tests_passed == tests_run) ? 0 : 1;
+}

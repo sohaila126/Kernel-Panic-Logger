@@ -281,3 +281,12 @@ sys_dumppanic(void)
 
   return 0;
 }
+
+// ---- NEW: sys_logtest -------------------------------------------------
+// Exercises the kernel log system from user space.
+// Returns 0 on success.
+uint64
+sys_logtest(void)
+{
+  return log_test();
+}

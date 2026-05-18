@@ -26,6 +26,7 @@ char* sys_sbrk(int,int);
 int pause(int);
 int uptime(void);
 int dumppanic(void*, uint64*);
+int logtest(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

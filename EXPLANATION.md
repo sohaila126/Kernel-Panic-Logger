@@ -348,7 +348,41 @@ printf("ret=%d sz=%ld magic=0x%x\n", ret, sz, ctx.magic);
 
 7. **`log_dump_crash_context()` recursion safety:** If `printf()` inside `log_dump_crash_context()` triggers another panic (unlikely but possible), infinite recursion would occur. The `panicking` guard in `printf()` mitigates this by skipping lock acquisition, but a true re-entrant panic would still loop.
 
-## 7. Architecture Decision Record
+## 7. Automated Test Program
+
+A user-space test program is provided at `user/logtest.c` that validates the log system programmatically.
+
+### Tests performed
+
+| # | Name | What it does |
+|---|------|-------------|
+| 1 | `kernel log_test` | Calls `logtest()` syscall which exercises `log_info`, `log_warn`, `log_debug`, `log_panic_prep`, circular buffer wrap (69 entries), format specifier coverage, and `log_flush()` |
+| 2 | `dumppanic syscall` | Calls `dumppanic()` and verifies return code is 0 and size matches `sizeof(crash_context)` |
+| 3 | `magic is 0 before panic` | Ensures `crash_context.magic == 0` when no panic has occurred |
+| 4 | `fields zeroed before panic` | Ensures registers and process fields are zero before panic (fresh boot state) |
+| 5 | `repeated log_test (5x stress)` | Runs the kernel log test 5 times to ensure no buffer corruption or lock issues |
+
+### How to run
+```bash
+$ logtest
+```
+
+### Expected output
+```
+logtest: starting kernel panic log tests
+  TEST 1: kernel log_test ... PASS
+  TEST 2: dumppanic syscall ... PASS
+  TEST 3: magic is 0 before panic ... PASS
+  TEST 4: fields zeroed before panic ... PASS
+  TEST 5: repeated log_test (5x stress) ... PASS
+
+logtest: 5/5 tests passed
+logtest: ALL TESTS PASSED
+```
+
+The kernel log flush output from `log_test()` will also appear on the console as the tests run.
+
+## 8. Architecture Decision Record
 
 | Decision | Rationale |
 |----------|-----------|

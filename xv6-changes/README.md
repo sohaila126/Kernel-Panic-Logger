@@ -9,6 +9,7 @@ This document lists every change that must be applied to the xv6-riscv source tr
 | `kernel/paniclog.h` | Header: log levels, `struct log_entry`, `struct crash_context`, macros |
 | `kernel/paniclog.c` | Implementation: circular buffer, logging functions, crash-capture, stack walk |
 | `user/dumppanic.c` | User-space utility: retrieves and displays last crash context |
+| `user/logtest.c` | Automated test program: exercises log system via syscall, validates crash context |
 
 ## Modified Files
 
@@ -28,24 +29,34 @@ This document lists every change that must be applied to the xv6-riscv source tr
 
 ### kernel/syscall.h
 - **Added `#define SYS_dumppanic 22`**
+- **Added `#define SYS_logtest 23`**
 
 ### kernel/syscall.c
 - **Added `extern uint64 sys_dumppanic(void);`**
+- **Added `extern uint64 sys_logtest(void);`**
 - **Added `[SYS_dumppanic] sys_dumppanic,`** to the syscalls array
+- **Added `[SYS_logtest] sys_logtest,`** to the syscalls array
 
 ### kernel/sysproc.c
 - **Added `#include "paniclog.h"`** at top
 - **Added `sys_dumppanic()`** implementation
+- **Added `sys_logtest()`** implementation (calls `log_test()`)
 
 ### user/user.h
 - **Added `int dumppanic(void*, uint64*);`** declaration
+- **Added `int logtest(void);`** declaration
 
 ### user/usys.pl
-- **Added `entry("dumppanic");`** at end
+- **Added `entry("dumppanic");`**
+- **Added `entry("logtest");`**
+
+### kernel/paniclog.c
+- **Added `log_test()`** function — exercises all log levels, buffer wrap, format specifiers, and flush
 
 ### Makefile
 - **Added `$K/paniclog.o`** to `OBJS`
 - **Added `$U/_dumppanic\`** to `UPROGS`
+- **Added `$U/_logtest\`** to `UPROGS`
 
 ## Summary of Changes by Line Count
 
