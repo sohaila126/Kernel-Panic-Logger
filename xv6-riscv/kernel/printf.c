@@ -14,6 +14,7 @@
 #include "riscv.h"
 #include "defs.h"
 #include "proc.h"
+#include "paniclog.h"
 
 volatile int panicking = 0; // printing a panic message
 volatile int panicked = 0; // spinning forever at end of a panic
@@ -137,8 +138,20 @@ void
 panic(char *s)
 {
   panicking = 1;
+
+  // ---- ENHANCED: save crash context BEFORE any console output ----
+  log_save_crash_context(s);
+
+  // ---- Flush the circular log buffer to console ------------------
+  log_flush();
+
+  // ---- Original panic output -------------------------------------
   printf("panic: ");
   printf("%s\n", s);
+
+  // ---- Dump crash context to console -----------------------------
+  log_dump_crash_context();
+
   panicked = 1; // freeze uart output from other CPUs
   for(;;)
     ;
