@@ -26,6 +26,12 @@ static struct {
 
 static char digits[] = "0123456789abcdef";
 
+void
+printfinit(void)
+{
+  initlock(&pr.lock, "pr");
+}
+
 static void
 printint(long long xx, int base, int sign)
 {
