@@ -785,19 +785,7 @@ Register and address values will vary — the key is that registers are non-zero
 
 ---
 
-## 10. Known Limitations
 
-1. **No persistence across QEMU reboot:** Static BSS variables are zeroed at each boot. The crash context survives only until the next reboot. On real hardware, static data would persist across a warm reset (but not cold power-off).
-
-2. **Conceptual reserved memory:** The specification mentions `0x6000–0x7000` as a reserved memory region. On xv6-riscv, this physical range is occupied by QEMU's boot ROM and CLINT. The implementation uses kernel BSS instead. Constants `CRASH_CONTEXT_RESERVED_BASE` and `LOG_BUF_RESERVED_BASE` are provided for documentation compatibility.
-
-3. **No virtual-disk write:** Writing panic data to the filesystem would require the virtio disk driver to function during panic, but it depends on interrupts and locks that may not work correctly. A synchronous "panic write" mode adds significant complexity.
-
-4. **Stack trace accuracy:** The frame-pointer walk may miss frames if the compiler omits frame pointers (`-fno-omit-frame-pointer` is in CFLAGS, so this should work). Functions called before `panic()` establishes its own frame may not appear. The trace gives return addresses but not symbol names (xv6 has no runtime symbol table).
-
-5. **No log rotation or compression:** The circular buffer is fixed at 64 entries. Under heavy logging, older entries are silently overwritten.
-
-6. **Custom vsnprintf:** Does not support floating-point, `%n`, `%*`, or positional arguments. This matches the subset supported by xv6's `printf()`.
 
 7. **Recursion safety:** If `printf()` inside `log_dump_crash_context()` triggers another panic (unlikely), infinite recursion would occur. The `panicking` guard in `printf()` mitigates this by skipping lock acquisition, but a re-entrant panic would still loop.
 
