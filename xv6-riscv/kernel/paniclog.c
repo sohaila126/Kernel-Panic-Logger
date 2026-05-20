@@ -227,7 +227,11 @@ log_panic_prep(const char *file, int line, const char *fmt, ...)
 void
 log_flush(void)
 {
+  static int flushing = 0;
+  if (flushing)
+    return;
   acquire(&logbuf.lock);
+  flushing = 1;
 
   printf("\n--- LOG FLUSH (most recent first) ---\n");
   int idx = logbuf.head;
@@ -235,7 +239,7 @@ log_flush(void)
   for (int i = 0; i < logbuf.count; i++) {
     idx = (idx - 1 + LOG_SIZE) % LOG_SIZE;
     struct log_entry *e = &logbuf.entries[idx];
-    printf("[%5d][%s] %s:%d ", e->ticks, lvlstr(e->level),
+    printf("[%d][%s] %s:%d ", e->ticks, lvlstr(e->level),
            e->file, e->line);
     printf("%s\n", e->msg);
     printed++;
@@ -244,6 +248,7 @@ log_flush(void)
     printf("(log buffer empty)\n");
   printf("--- END LOG FLUSH ---\n");
 
+  flushing = 0;
   release(&logbuf.lock);
 }
 
