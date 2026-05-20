@@ -1,14 +1,11 @@
 //
 // Kernel panic logging system.
 // Provides a circular log buffer, crash-context capture,
-// logging functions (info / warn / debug), and panic-handler
+// logging functions (info/warn/debug), and panic-handler
 // enhancements.
-//
-// Adapted for xv6-riscv (RISC-V 64-bit).
 //
 
 #include <stdarg.h>
-
 #include "types.h"
 #include "param.h"
 #include "spinlock.h"
@@ -21,23 +18,24 @@
 #include "proc.h"
 #include "paniclog.h"
 
-// ------------------------------------------------------------------
-// Log buffer (circular, statically allocated)
-// ------------------------------------------------------------------
+// ============================================================================
+// SECTION: Log buffer (circular, statically allocated)
+// ============================================================================
 static struct {
   struct spinlock    lock;
   struct log_entry   entries[LOG_SIZE];
-  int                head;   // next slot to write
-  int                count;  // number of entries in buffer
+  int                head;
+  int                count;
 } logbuf;
 
-// ------------------------------------------------------------------
-// Saved crash context (statically allocated, readable after panic)
-// ------------------------------------------------------------------
+// ============================================================================
+// SECTION: Saved crash context (statically allocated)
+// ============================================================================
 struct crash_context saved_crash_ctx;
 
-// ---- local helpers -------------------------------------------------
-
+// ============================================================================
+// SECTION: lvlstr — convert log level to string
+// ============================================================================
 static const char *lvlstr(int level)
 {
   switch (level) {
@@ -49,15 +47,14 @@ static const char *lvlstr(int level)
   }
 }
 
-// Minimal vsnprintf – supports the same subset as xv6's printf:
-//   %d %ld %lld %u %lu %llu %x %lx %llx %p %s %c %%
-// Writes at most 'n' bytes into 'buf' (nul-terminated).
-// Returns the number of chars that would be written (excluding nul).
+// ============================================================================
+// SECTION: vsnprintf — minimal string formatter for log buffer
+// ============================================================================
 static int
 vsnprintf(char *buf, int n, const char *fmt, va_list ap)
 {
   char *dst = buf;
-  char *end = buf + n - 1;  // leave room for nul
+  char *end = buf + n - 1;
   int    i, cx, c0, c1, c2;
   char  *s;
   unsigned long long x;
@@ -146,7 +143,9 @@ vsnprintf(char *buf, int n, const char *fmt, va_list ap)
   return dst - buf;
 }
 
-// ---- internal: add entry to circular buffer -------------------------
+// ============================================================================
+// SECTION: log_add — internal circular buffer insertion
+// ============================================================================
 static void
 log_add(int level, const char *file, int line, const char *fmt, va_list ap)
 {
@@ -154,12 +153,9 @@ log_add(int level, const char *file, int line, const char *fmt, va_list ap)
 
   struct log_entry *e = &logbuf.entries[logbuf.head];
 
-  // Timestamp using ticks (exported from trap.c)
   e->ticks = ticks;
-
   e->level = level;
 
-  // Extract basename from file path
   const char *basename = file;
   for (const char *p = file; *p; p++) {
     if (*p == '/' || *p == '\\')
@@ -168,10 +164,8 @@ log_add(int level, const char *file, int line, const char *fmt, va_list ap)
   safestrcpy(e->file, (char*)basename, LOG_FILE_MAX);
   e->line = line;
 
-  // Format the message via our internal vsnprintf
   vsnprintf(e->msg, LOG_MSG_MAX, fmt, ap);
 
-  // Advance circular buffer
   logbuf.head = (logbuf.head + 1) % LOG_SIZE;
   if (logbuf.count < LOG_SIZE)
     logbuf.count++;
@@ -179,8 +173,9 @@ log_add(int level, const char *file, int line, const char *fmt, va_list ap)
   release(&logbuf.lock);
 }
 
-// ---- public logging functions --------------------------------------
-
+// ============================================================================
+// SECTION: log_info — public INFO-level logger
+// ============================================================================
 void
 log_info(const char *file, int line, const char *fmt, ...)
 {
@@ -190,6 +185,9 @@ log_info(const char *file, int line, const char *fmt, ...)
   va_end(ap);
 }
 
+// ============================================================================
+// SECTION: log_warn — public WARN-level logger
+// ============================================================================
 void
 log_warn(const char *file, int line, const char *fmt, ...)
 {
@@ -199,6 +197,9 @@ log_warn(const char *file, int line, const char *fmt, ...)
   va_end(ap);
 }
 
+// ============================================================================
+// SECTION: log_debug — public DEBUG-level logger
+// ============================================================================
 void
 log_debug(const char *file, int line, const char *fmt, ...)
 {
@@ -208,8 +209,9 @@ log_debug(const char *file, int line, const char *fmt, ...)
   va_end(ap);
 }
 
-// Called just before panic to capture the last "pre-panic"
-// message into the circular buffer.
+// ============================================================================
+// SECTION: log_panic_prep — log a PANIC-level entry before panic
+// ============================================================================
 void
 log_panic_prep(const char *file, int line, const char *fmt, ...)
 {
@@ -219,7 +221,9 @@ log_panic_prep(const char *file, int line, const char *fmt, ...)
   va_end(ap);
 }
 
-// ---- flush: dump the entire log buffer to the console --------------
+// ============================================================================
+// SECTION: log_flush — dump entire circular buffer to console
+// ============================================================================
 void
 log_flush(void)
 {
@@ -243,14 +247,14 @@ log_flush(void)
   release(&logbuf.lock);
 }
 
-// ---- capture crash context (registers, stack, process) --------------
+// ============================================================================
+// SECTION: log_save_crash_context — capture registers, CSRs, process, stack
+// ============================================================================
 void
 log_save_crash_context(const char *panic_msg)
 {
-  // Zero out previous context
   memset(&saved_crash_ctx, 0, sizeof(saved_crash_ctx));
 
-  // Capture RISC-V registers via inline assembly
   asm volatile("mv %0, ra" : "=r"(saved_crash_ctx.ra));
   asm volatile("mv %0, sp" : "=r"(saved_crash_ctx.sp));
   asm volatile("mv %0, gp" : "=r"(saved_crash_ctx.gp));
@@ -283,18 +287,15 @@ log_save_crash_context(const char *panic_msg)
   asm volatile("mv %0, t5" : "=r"(saved_crash_ctx.t5));
   asm volatile("mv %0, t6" : "=r"(saved_crash_ctx.t6));
 
-  // Capture supervisor CSRs
   saved_crash_ctx.sepc    = r_sepc();
   saved_crash_ctx.scause  = r_scause();
   saved_crash_ctx.stval   = r_stval();
   saved_crash_ctx.sstatus = r_sstatus();
 
-  // Capture tick count
   acquire(&tickslock);
   saved_crash_ctx.panic_ticks = ticks;
   release(&tickslock);
 
-  // Capture process info
   struct proc *p = myproc();
   if (p) {
     saved_crash_ctx.pid = p->pid;
@@ -306,31 +307,25 @@ log_save_crash_context(const char *panic_msg)
     saved_crash_ctx.pstate = -1;
   }
 
-  // Capture CPU number (hartid)
   saved_crash_ctx.cpu = cpuid();
 
-  // Copy panic message
   safestrcpy(saved_crash_ctx.panic_msg, (char*)panic_msg, 128);
 
-  // --- Stack trace via frame pointer (s0) walk ---
-  // RISC-V calling convention: the frame record at each frame
-  // is [saved s0 (fp)] at offset 0, [saved ra] at offset 8.
-  // We walk s0 chain up to 10 frames.
   uint64 fp = saved_crash_ctx.s0;
   saved_crash_ctx.stack_depth = 0;
   for (int i = 0; i < 10 && fp != 0; i++) {
-    // Read return address at fp+8 (physical reads since we're in kernel)
     uint64 *frame = (uint64 *)fp;
-    saved_crash_ctx.stacktrace[i] = frame[1];  // saved ra
-    fp = frame[0];                             // saved s0 (next frame)
+    saved_crash_ctx.stacktrace[i] = frame[1];
+    fp = frame[0];
     saved_crash_ctx.stack_depth++;
   }
 
-  // Mark valid
   saved_crash_ctx.magic = CRASH_MAGIC;
 }
 
-// ---- dump the saved crash context to console ------------------------
+// ============================================================================
+// SECTION: log_dump_crash_context — print saved crash context to console
+// ============================================================================
 void
 log_dump_crash_context(void)
 {
@@ -344,6 +339,7 @@ log_dump_crash_context(void)
   printf("Message: %s\n", saved_crash_ctx.panic_msg);
   printf("Ticks:   %ld\n", saved_crash_ctx.panic_ticks);
   printf("CPU:     %d\n", saved_crash_ctx.cpu);
+
   printf("\n-- RISC-V Register State --\n");
   printf("ra=0x%lx  sp=0x%lx  gp=0x%lx  tp=0x%lx\n",
          saved_crash_ctx.ra, saved_crash_ctx.sp,
@@ -370,6 +366,7 @@ log_dump_crash_context(void)
   printf("t3=0x%lx  t4=0x%lx  t5=0x%lx  t6=0x%lx\n",
          saved_crash_ctx.t3, saved_crash_ctx.t4,
          saved_crash_ctx.t5, saved_crash_ctx.t6);
+
   printf("\n-- Supervisor CSRs --\n");
   printf("sepc=0x%lx  scause=0x%lx  stval=0x%lx  sstatus=0x%lx\n",
          saved_crash_ctx.sepc, saved_crash_ctx.scause,
@@ -388,7 +385,9 @@ log_dump_crash_context(void)
   printf("============================================\n");
 }
 
-// ---- initialization: call once during boot --------------------------
+// ============================================================================
+// SECTION: log_init — initialize log buffer and crash context
+// ============================================================================
 void
 log_init(void)
 {
@@ -396,43 +395,33 @@ log_init(void)
   logbuf.head  = 0;
   logbuf.count = 0;
 
-  // Clear saved crash context
   memset(&saved_crash_ctx, 0, sizeof(saved_crash_ctx));
   saved_crash_ctx.magic = 0;
 }
 
-// ---- test: exercise the log system from kernel context -------------
-// Called via sys_logtest.  Returns 0 on success, -1 if any test fails.
+// ============================================================================
+// SECTION: log_test — exercise the log system from kernel context
+// ============================================================================
 int
 log_test(void)
 {
   int failed = 0;
 
-  // Test 1: basic write at each level
   log_info(__FILE__, __LINE__, "log_test: INFO message (pid=42)");
   log_warn(__FILE__, __LINE__, "log_test: WARN message (x=%x)", 0xDEAD);
   log_debug(__FILE__, __LINE__, "log_test: DEBUG message (str=%s)", "hello");
   log_panic_prep(__FILE__, __LINE__, "log_test: PANIC prep (num=%d)", -1);
 
-  // Verify entries were added (internal buffer should have count >= 4)
-  // Can't directly check logbuf.count from here, but we exercise the code path.
-
-  // Test 2: circular buffer wrap — write LOG_SIZE+1 entries
   for (int i = 0; i < LOG_SIZE + 5; i++) {
     log_debug(__FILE__, __LINE__, "wrap test i=%d", i);
   }
-  // After wrapping, buffer should still have LOG_SIZE entries.
-  // Oldest entries should have been overwritten.
-  // (verification of this is indirect — we check by flushing)
 
-  // Test 3: format specifier coverage
   log_info(__FILE__, __LINE__, "fmt d=%d ld=%ld lld=%lld", -1, -2L, -3LL);
   log_info(__FILE__, __LINE__, "fmt u=%u lu=%lu llu=%llu", 1U, 2UL, 3ULL);
   log_info(__FILE__, __LINE__, "fmt x=%x lx=%lx llx=%llx", 0xFF, 0xFFFUL, 0xFFFFULL);
   log_info(__FILE__, __LINE__, "fmt s=\"%s\" c='%c' p=%p", "test", 'A', (void*)0x80000000);
   log_info(__FILE__, __LINE__, "fmt %%");
 
-  // Test 4: flush (just calls the function, output goes to console)
   log_flush();
 
   printf("log_test: all tests completed.\n");

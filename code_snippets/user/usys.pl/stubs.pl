@@ -1,0 +1,2 @@
+entry("dumppanic");
+entry("logtest");

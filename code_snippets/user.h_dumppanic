@@ -1,7 +1,0 @@
-// ============================================================
-// FILE: user/user.h (MODIFIED)
-// Line: 26 — added dumppanic() declaration
-// ============================================================
-//
-// ADDED after uptime declaration:
-int dumppanic(void*, uint64*);

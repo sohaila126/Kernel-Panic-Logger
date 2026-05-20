@@ -13,8 +13,6 @@ main()
   if(cpuid() == 0){
     consoleinit();
     printfinit();
-    // Initialize the panic log system early so that any
-    // subsequent logging calls work correctly.
     log_init();
     printf("\n");
     printf("xv6 kernel is booting\n");

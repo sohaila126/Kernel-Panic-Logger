@@ -139,26 +139,14 @@ panic(char *s)
 {
   panicking = 1;
 
-  // ---- ENHANCED: save crash context BEFORE any console output ----
   log_save_crash_context(s);
-
-  // ---- Flush the circular log buffer to console ------------------
   log_flush();
 
-  // ---- Original panic output -------------------------------------
   printf("panic: ");
   printf("%s\n", s);
-
-  // ---- Dump crash context to console -----------------------------
   log_dump_crash_context();
 
-  panicked = 1; // freeze uart output from other CPUs
+  panicked = 1;
   for(;;)
     ;
-}
-
-void
-printfinit(void)
-{
-  initlock(&pr.lock, "pr");
 }

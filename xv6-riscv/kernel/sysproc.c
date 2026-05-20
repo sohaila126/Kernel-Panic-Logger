@@ -78,10 +78,6 @@ sys_uptime(void)
   return xticks;
 }
 
-// ---- NEW: sys_dumppanic --------------------------------------------
-// Copy the saved crash context to user-space buffer.
-// User provides: uint64 dst_addr, uint64 *len_out
-// Returns 0 on success, -1 on error.
 uint64
 sys_dumppanic(void)
 {
@@ -93,21 +89,16 @@ sys_dumppanic(void)
 
   struct proc *p = myproc();
 
-  // First write the size of crash_context to *len_addr
   uint64 sz = sizeof(saved_crash_ctx);
   if (copyout(p->pagetable, len_addr, (char*)&sz, sizeof(sz)) < 0)
     return -1;
 
-  // Then copy the crash context itself to user buffer
   if (copyout(p->pagetable, dst, (char*)&saved_crash_ctx, sizeof(saved_crash_ctx)) < 0)
     return -1;
 
   return 0;
 }
 
-// ---- NEW: sys_logtest -------------------------------------------------
-// Exercises the kernel log system from user space.
-// Returns 0 on success.
 uint64
 sys_logtest(void)
 {

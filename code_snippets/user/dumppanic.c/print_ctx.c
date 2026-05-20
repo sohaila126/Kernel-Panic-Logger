@@ -1,15 +1,3 @@
-//
-// dumppanic — user-space utility to retrieve and display the
-// last kernel panic's crash context.
-//
-
-#include "kernel/types.h"
-#include "kernel/paniclog.h"
-#include "user/user.h"
-
-// ============================================================================
-// SECTION: print_ctx — format and print crash context
-// ============================================================================
 static void
 print_ctx(struct crash_context *ctx)
 {
@@ -56,29 +44,4 @@ print_ctx(struct crash_context *ctx)
     printf("  [%d] 0x%lx\n", i, ctx->stacktrace[i]);
 
   printf("====================================================\n");
-}
-
-// ============================================================================
-// SECTION: main — entry point
-// ============================================================================
-int
-main(int argc, char *argv[])
-{
-  struct crash_context ctx;
-  uint64 sz;
-
-  int ret = dumppanic(&ctx, &sz);
-  if (ret < 0) {
-    printf("dumppanic: syscall failed\n");
-    return -1;
-  }
-
-  if (sz != sizeof(ctx)) {
-    printf("dumppanic: size mismatch (expected %lu, got %lu)\n",
-           sizeof(ctx), sz);
-    return -1;
-  }
-
-  print_ctx(&ctx);
-  return 0;
 }

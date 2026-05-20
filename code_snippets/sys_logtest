@@ -1,9 +1,0 @@
-// ============================================================
-// FILE: kernel/sysproc.c (MODIFIED — added sys_logtest)
-// Lines: 284-291
-// ============================================================
-uint64
-sys_logtest(void)
-{
-  return log_test();
-}

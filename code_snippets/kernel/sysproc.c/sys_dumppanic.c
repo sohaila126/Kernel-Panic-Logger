@@ -1,11 +1,3 @@
-// ============================================================
-// FILE: kernel/sysproc.c (MODIFIED)
-// Lines: 245-272 — added sys_dumppanic() implementation
-// ============================================================
-//
-// NEW function that copies the saved crash context to
-// user space. Also includes `#include "paniclog.h"` at top.
-
 uint64
 sys_dumppanic(void)
 {

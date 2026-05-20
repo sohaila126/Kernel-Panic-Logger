@@ -1,14 +1,3 @@
-//
-// logtest — automated test for the kernel panic log system.
-//
-
-#include "kernel/types.h"
-#include "kernel/paniclog.h"
-#include "user/user.h"
-
-// ============================================================================
-// SECTION: Test macros
-// ============================================================================
 static int tests_run = 0;
 static int tests_passed = 0;
 
@@ -25,9 +14,6 @@ static int tests_passed = 0;
   printf("FAIL: %s\n", msg); \
 } while(0)
 
-// ============================================================================
-// SECTION: main — test runner
-// ============================================================================
 int
 main(void)
 {
