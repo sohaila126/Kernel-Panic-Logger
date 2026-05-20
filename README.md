@@ -748,26 +748,9 @@ Register and address values will vary — the key is that registers are non-zero
 
 ---
 
-## 8. Memory Usage and Side Effects
-
-| Resource | Usage |
-|----------|-------|
-| **Log buffer (static BSS)** | `64 × (4+4+32+4+128) = 64 × 172 ≈ 11 KB` |
-| **Crash context (static BSS)** | `≈ 592 bytes` |
-| **vsnprintf stack buffer** | `24 bytes per call` (temporary digit buffer) |
-| **Total additional memory** | **≈ 12 KB** — all statically allocated, no heap/free-page usage |
-
-**Spinlock contention:** `logbuf.lock` is acquired on every `log_*()` call and on `log_flush()`. In normal operation these calls are infrequent. During panic, the lock is uncontended because only one CPU panics.
-
-**Stack usage:** `log_save_crash_context()` does not use recursion. The frame-pointer walk is bounded to 10 iterations. Total stack usage per call is well under 200 bytes.
-
-**UART freeze:** When `panicked=1`, UART output is frozen for other CPUs. This is pre-existing behavior in xv6 (the UART's `uartputc_sync()` spins when `panicked` is set) and is unchanged by our modifications.
-
-**Compiler compatibility:** The code requires `-fno-omit-frame-pointer` (already in CFLAGS) for the frame-pointer stack walk to work correctly.
-
 ---
 
-## 9. Architecture Decision Record
+## 8. Architecture Decision Record
 
 | Decision | Rationale |
 |----------|-----------|
