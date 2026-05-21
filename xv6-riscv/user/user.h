@@ -27,6 +27,7 @@ int pause(int);
 int uptime(void);
 int dumppanic(void*, uint64*);
 int logtest(void);
+int crashme(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

@@ -104,3 +104,15 @@ sys_logtest(void)
 {
   return log_test();
 }
+
+uint64
+sys_crashme(void)
+{
+  printf("crashme: simulating kernel panic...\n");
+
+  log_save_crash_context("crashme: user-initiated crash");
+  log_flush();
+  log_dump_crash_context();
+
+  return 0;
+}

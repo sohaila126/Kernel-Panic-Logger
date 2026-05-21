@@ -44,3 +44,4 @@ entry("pause");
 entry("uptime");
 entry("dumppanic");
 entry("logtest");
+entry("crashme");

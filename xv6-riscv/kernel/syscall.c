@@ -103,6 +103,7 @@ extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
 extern uint64 sys_dumppanic(void);
 extern uint64 sys_logtest(void);
+extern uint64 sys_crashme(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -130,6 +131,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_dumppanic] sys_dumppanic,
 [SYS_logtest]   sys_logtest,
+[SYS_crashme]   sys_crashme,
 };
 
 void

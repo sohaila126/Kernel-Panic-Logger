@@ -22,3 +22,4 @@
 #define SYS_close  21
 #define SYS_dumppanic 22
 #define SYS_logtest   23
+#define SYS_crashme   24

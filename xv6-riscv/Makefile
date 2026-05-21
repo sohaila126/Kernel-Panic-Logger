@@ -148,6 +148,7 @@ UPROGS=\
 	$U/_dorphan\
 	$U/_dumppanic\
 	$U/_logtest\
+	$U/_crashme\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
