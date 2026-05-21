@@ -33,39 +33,18 @@ main(void)
 {
   printf("logtest: starting kernel panic log tests\n");
 
-  TEST("kernel log_test (info/warn/debug/flush)");
-  int ret = logtest();
-  if (ret == 0)
-    PASS();
-  else
-    FAIL("logtest() returned non-zero");
-
-  TEST("dumppanic syscall (no panic yet)");
-  {
-    struct crash_context ctx;
-    uint64 sz;
-    ret = dumppanic(&ctx, &sz);
-    if (ret != 0) {
-      FAIL("dumppanic returned -1");
-    } else if (sz != sizeof(ctx)) {
-      FAIL("size mismatch");
-    } else {
-      PASS();
-    }
-  }
-
   TEST("crash context magic is 0 before panic");
   {
     struct crash_context ctx;
     uint64 sz;
-    dumppanic(&ctx, &sz);
-    if (ctx.magic == 0)
+    int r = dumppanic(&ctx, &sz);
+    if (r == 0 && sz == sizeof(ctx) && ctx.magic == 0)
       PASS();
     else
       FAIL("expected magic=0");
   }
 
-  TEST("crash context fields are zeroed");
+  TEST("crash context fields are zeroed before panic");
   {
     struct crash_context ctx;
     uint64 sz;
@@ -74,6 +53,35 @@ main(void)
       PASS();
     else
       FAIL("some fields non-zero before panic");
+  }
+
+  TEST("kernel log_test (info/warn/debug/flush + crash ctx)");
+  int ret = logtest();
+  if (ret == 0)
+    PASS();
+  else
+    FAIL("logtest() returned non-zero");
+
+  TEST("dumppanic syscall returns valid crash context");
+  {
+    struct crash_context ctx;
+    uint64 sz;
+    ret = dumppanic(&ctx, &sz);
+    if (ret == 0 && sz == sizeof(ctx))
+      PASS();
+    else
+      FAIL("syscall failed or size mismatch");
+  }
+
+  TEST("crash context populated after log_test");
+  {
+    struct crash_context ctx;
+    uint64 sz;
+    dumppanic(&ctx, &sz);
+    if (ctx.magic == 0xDEADBEEF && ctx.ra != 0)
+      PASS();
+    else
+      FAIL("context not populated");
   }
 
   TEST("repeated log_test calls (stress)");
