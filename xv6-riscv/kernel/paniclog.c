@@ -429,6 +429,8 @@ log_test(void)
 
   log_flush();
 
+  log_save_crash_context("log_test: simulated panic for dumppanic");
+
   printf("log_test: all tests completed.\n");
   return failed;
 }
